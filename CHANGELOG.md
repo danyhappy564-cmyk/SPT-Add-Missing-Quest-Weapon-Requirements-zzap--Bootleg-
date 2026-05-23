@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.0
+
+**Added**
+- `applyToManualOverrides` boolean on `TypeRule` (default `false`). When `true`, a non-core rule (`nameContains` / `nameMatches` / `pathMatches` / `descriptionMatches`) merges its type into items that have a `manualTypeOverrides` entry instead of being suppressed. Lets mod authors define grouping rules (e.g. an "HK" name-match) that stack with per-item structural overrides.
+
 ## 2.0.4
 
 **Fixes**

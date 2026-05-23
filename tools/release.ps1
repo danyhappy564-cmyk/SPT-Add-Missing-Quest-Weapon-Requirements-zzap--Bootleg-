@@ -262,12 +262,15 @@ try {
     # ── Step 7: push to public + tag ──────────────────────────────────────────
     Write-Host ""
     Write-Host "==> running release-to-public.ps1"
-    $rtpArgs = @($Version)
+    # Hashtable splat: array splat would pass "-NotesFile" as a positional value
+    # under Windows PowerShell 5.1, which rejects it because release-to-public.ps1
+    # declares NotesFile as named-only (no Position attribute).
+    $rtpArgs = @{ Version = $Version }
     if ($resolvedNotesFile) {
-        $rtpArgs += @("-NotesFile", $resolvedNotesFile)
+        $rtpArgs.NotesFile = $resolvedNotesFile
     }
     if ($DryRun) {
-        $rtpArgs += @("-DryRun")
+        $rtpArgs.DryRun = $true
     }
     & $ReleaseToPub @rtpArgs
     if ($LASTEXITCODE -ne 0) {

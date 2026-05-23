@@ -148,4 +148,25 @@ public class RuleEngineTests
         engine.EvaluateAll(Db.Items["ak74"])[0].Type.Should().Be("AssaultRifle");
         engine.EvaluateAll(Db.Items["rhino"])[0].Type.Should().Be("Pistol");
     }
+
+    [Fact]
+    public void EvaluateAll_propagates_ApplyToManualOverrides_flag()
+    {
+        var flagged = new TypeRule
+        {
+            Type = "Flagged",
+            Conditions = new() { ["hasAncestor"] = JsonDocument.Parse("\"Weapon\"").RootElement },
+            ApplyToManualOverrides = true
+        };
+        var unflagged = new TypeRule
+        {
+            Type = "Unflagged",
+            Conditions = new() { ["hasAncestor"] = JsonDocument.Parse("\"Weapon\"").RootElement }
+        };
+        var engine = new RuleEngine([flagged, unflagged], Db);
+        var matches = engine.EvaluateAll(Db.Items["ak74"]);
+
+        matches.Single(m => m.Type == "Flagged").ApplyToManualOverrides.Should().BeTrue();
+        matches.Single(m => m.Type == "Unflagged").ApplyToManualOverrides.Should().BeFalse();
+    }
 }

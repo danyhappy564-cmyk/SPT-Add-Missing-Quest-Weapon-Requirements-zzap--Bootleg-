@@ -235,6 +235,61 @@ public class WeaponCategorizerTests
         result.WeaponTypes["Pistol"].Should().Contain("pm");
     }
 
+    [Fact]
+    public void Manual_Override_does_not_suppress_flagged_non_core_rule()
+    {
+        // Reproduces user-reported HK case: weapons listed in manualTypeOverrides
+        // never joined the "HK" group built by a nameMatches rule. With
+        // applyToManualOverrides:true on the rule, the override and the rule stack.
+        //
+        // ak74 has locale "AKS-74U 5.45x39 assault rifle" — does NOT match "^HK",
+        // so we use ak47 which has locale "AKM 7.62x39 assault rifle" — also no HK.
+        // Mint a rule that matches "AKM" via nameMatches so the case is unambiguous.
+        var settings = new OverriddenSettings
+        {
+            ManualTypeOverrides = new() { ["ak47"] = "AssaultRifle,AssaultCarbine" },
+            TypeRules =
+            [
+                new TypeRule
+                {
+                    Type = "AKM_Family",
+                    Conditions = new() { ["nameMatches"] = Str("^AKM") },
+                    ApplyToManualOverrides = true
+                }
+            ]
+        };
+        var result = new WeaponCategorizer(DefaultRules)
+            .Categorize(MakeDb(), settings, new ModConfig());
+
+        result.WeaponToType["ak47"].Should().Contain("AssaultRifle");
+        result.WeaponToType["ak47"].Should().Contain("AssaultCarbine");
+        result.WeaponToType["ak47"].Should().Contain("AKM_Family");
+        result.WeaponTypes["AKM_Family"].Should().Contain("ak47");
+    }
+
+    [Fact]
+    public void Manual_Override_still_suppresses_unflagged_non_core_rule()
+    {
+        // Regression pin: with flag default-false the historical suppression still applies.
+        var settings = new OverriddenSettings
+        {
+            ManualTypeOverrides = new() { ["ak47"] = "AssaultRifle" },
+            TypeRules =
+            [
+                new TypeRule
+                {
+                    Type = "AKM_Family",
+                    Conditions = new() { ["nameMatches"] = Str("^AKM") }
+                }
+            ]
+        };
+        var result = new WeaponCategorizer(DefaultRules)
+            .Categorize(MakeDb(), settings, new ModConfig());
+
+        result.WeaponToType["ak47"].Should().NotContain("AKM_Family");
+        result.WeaponTypes.Should().NotContainKey("AKM_Family");
+    }
+
     // ── Abstract nodes skipped ───────────────────────────────────────────────
 
     [Fact]

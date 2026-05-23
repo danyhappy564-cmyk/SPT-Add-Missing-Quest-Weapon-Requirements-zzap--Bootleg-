@@ -168,13 +168,14 @@ Same fields as WeaponOverrides but for attachments:
 
 Rules classify items by looking at their properties. The mod ships with built-in rules; you add your own under `customTypeRules` in the respective overrides file.
 
-A rule has three parts:
+A rule has four parts:
 
 ```jsonc
 {
   "conditions": { /* what the item must satisfy — all keys ANDed */ },
-  "type": "TypeName",                // the name to assign
-  "alsoAs": ["OtherType", ...]       // optional extra types
+  "type": "TypeName",                       // the name to assign
+  "alsoAs": ["OtherType", ...],             // optional extra types
+  "applyToManualOverrides": false           // optional, see "Stacking on manual overrides" below
 }
 ```
 
@@ -230,6 +231,27 @@ A rule has three parts:
 // "conpensator" is BSG's spelling in the item database — not a typo in this config.
 { "conditions": { "hasAncestor": "Muzzle", "properties": { "muzzleModType": "conpensator"  }}, "type": "Compensator" }
 ```
+
+### Stacking on manual overrides
+
+Non-core rule conditions (`nameContains` / `nameMatches` / `pathMatches` / `descriptionMatches`) are skipped for any item that is already listed in `manualTypeOverrides`. The assumption is that you wrote the override because the heuristic was wrong, so re-applying it would undo your intent.
+
+When the opposite is true — you want a grouping rule like an "HK family" name-match to stack on top of structural overrides like `"AssaultRifle,AssaultCarbine"` — set `"applyToManualOverrides": true` on that single rule:
+
+```jsonc
+{
+  "conditions": {
+    "or": [
+      { "nameMatches": "^HK" },
+      { "descriptionMatches": "( HK |Heckler|Koch)" }
+    ]
+  },
+  "type": "HK",
+  "applyToManualOverrides": true
+}
+```
+
+Core rules (`hasAncestor` / `properties` / `caliber`) always stack regardless of this flag.
 
 ### The `{directChildOf:X}` template
 

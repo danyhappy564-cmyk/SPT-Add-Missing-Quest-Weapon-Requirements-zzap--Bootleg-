@@ -153,14 +153,17 @@ internal static class CategorizationHelper
             }
 
             // Apply rule matches: when a manual override is present, only core rules
-            // (caliber / hasAncestor / properties) are merged in — non-core rules
+            // (caliber / hasAncestor / properties) merge in by default. Non-core rules
             // (nameContains, nameMatches, pathMatches, descriptionMatches) are suppressed
-            // because the user may have overridden them deliberately.
+            // because the user may have overridden them deliberately. Rule authors can
+            // opt a non-core rule into the merge by setting `applyToManualOverrides: true`
+            // on the TypeRule — this is the escape valve for heuristic groupings (e.g. an
+            // "HK" name-match rule) that should stack regardless of the user's override.
             // When no manual override is present, all matching rules fire as before.
             var matches = engine.EvaluateAll(item);
             foreach (var match in matches)
             {
-                if (hasManualOverride && !match.IsCore)
+                if (hasManualOverride && !match.IsCore && !match.ApplyToManualOverrides)
                 {
                     continue;
                 }

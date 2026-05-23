@@ -97,6 +97,39 @@ public class AttachmentCategorizerTests
     }
 
     [Fact]
+    public void Manual_Override_does_not_suppress_flagged_non_core_rule()
+    {
+        // Parity with WeaponCategorizerTests: the applyToManualOverrides flag
+        // travels through the shared CategorizerCore identically for attachments.
+        // scope_a has manual override "TacticalScope,Scope" AND matches a flagged
+        // nameMatches rule "^Valday" — both type sets must end up on the item.
+        var settings = new OverriddenSettings
+        {
+            ManualAttachmentTypeOverrides = new() { ["scope_a"] = "TacticalScope,Scope" },
+            AttachmentTypeRules =
+            [
+                new TypeRule
+                {
+                    Type = "Valday_Family",
+                    Conditions = new()
+                    {
+                        ["nameMatches"] = JsonDocument.Parse("\"^Valday\"").RootElement
+                    },
+                    ApplyToManualOverrides = true
+                }
+            ]
+        };
+
+        var cat = new AttachmentCategorizer(DefaultRules)
+            .Categorize(MakeDb(), settings);
+
+        cat.AttachmentToType["scope_a"].Should().Contain("TacticalScope");
+        cat.AttachmentToType["scope_a"].Should().Contain("Scope");
+        cat.AttachmentToType["scope_a"].Should().Contain("Valday_Family");
+        cat.AttachmentTypes["Valday_Family"].Should().Contain("scope_a");
+    }
+
+    [Fact]
     public void Short_name_alias_matching_cross_links_items_with_same_normalized_name()
     {
         // stock_a and stock_b both have locale name "Fab Defense UAS stock" → aliased

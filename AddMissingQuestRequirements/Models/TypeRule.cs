@@ -36,4 +36,13 @@ public sealed class TypeRule
     /// </summary>
     [JsonPropertyName("behaviour")]
     public OverrideBehaviour? Behaviour { get; init; }
+
+    /// <summary>
+    /// Opt-in escape valve: when <see langword="true"/>, this rule contributes its match
+    /// to items that already have a <c>manualTypeOverrides</c> entry, even if the rule
+    /// is non-core (nameContains / nameMatches / pathMatches / descriptionMatches).
+    /// Default <see langword="false"/> preserves the heuristic-suppression contract from commit f92d45f.
+    /// </summary>
+    [JsonPropertyName("applyToManualOverrides")]
+    public bool ApplyToManualOverrides { get; init; } = false;
 }

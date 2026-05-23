@@ -8,9 +8,10 @@ namespace AddMissingQuestRequirements.Pipeline.Rules;
 
 /// <summary>
 /// The result of a single rule match: the resolved type name, the rule's alsoAs list,
-/// and whether the matching rule was a "core" rule (caliber / hasAncestor / properties only).
+/// whether the matching rule was a "core" rule (caliber / hasAncestor / properties only),
+/// and whether the rule opts into stacking on items that have a <c>manualTypeOverrides</c> entry.
 /// </summary>
-public sealed record RuleMatch(string Type, IReadOnlyList<string> AlsoAs, bool IsCore);
+public sealed record RuleMatch(string Type, IReadOnlyList<string> AlsoAs, bool IsCore, bool ApplyToManualOverrides);
 
 /// <summary>
 /// Evaluates an ordered list of <see cref="TypeRule"/>s against an item.
@@ -33,7 +34,8 @@ public sealed class RuleEngine
     private readonly record struct CompiledRule(
         IReadOnlyList<IRuleCondition> Conditions,
         TypeRule Rule,
-        bool IsCore);
+        bool IsCore,
+        bool ApplyToManualOverrides);
 
     public RuleEngine(IEnumerable<TypeRule> rules, IItemDatabase db)
     {
@@ -41,7 +43,8 @@ public sealed class RuleEngine
         _compiled = [..rules.Select(r => new CompiledRule(
             [..r.Conditions.Select(kvp => ConditionFactory.Create(kvp.Key, kvp.Value))],
             r,
-            RuleCoreDetector.IsCore(r.Conditions)
+            RuleCoreDetector.IsCore(r.Conditions),
+            r.ApplyToManualOverrides
         ))];
     }
 
@@ -67,7 +70,7 @@ public sealed class RuleEngine
                 continue; // template couldn't resolve (e.g. ancestor not found)
             }
 
-            matches.Add(new RuleMatch(resolvedType, compiled.Rule.AlsoAs, compiled.IsCore));
+            matches.Add(new RuleMatch(resolvedType, compiled.Rule.AlsoAs, compiled.IsCore, compiled.ApplyToManualOverrides));
         }
 
         return matches;

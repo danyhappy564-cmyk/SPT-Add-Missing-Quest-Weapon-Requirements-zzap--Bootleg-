@@ -145,6 +145,8 @@ The catch-all template `{directChildOf:X}` resolves at runtime to the `_name` of
 
 Custom categories are first-class: a type named `"AKM"` produced by a user rule is the same shape as `"AssaultRifle"` produced by a default rule — same maps, same expansion.
 
+**`applyToManualOverrides` flag:** non-core rule matches (`nameContains` / `nameMatches` / `pathMatches` / `descriptionMatches`) are suppressed for items already listed in `manualTypeOverrides`, because the override was likely written to escape the heuristic. Set `"applyToManualOverrides": true` on a rule to opt that single rule into stacking on overridden items anyway — use this for grouping rules (e.g. an "HK family" name-match) that should always apply even when the same items carry structural-type overrides.
+
 ### Mod-group expansion
 
 `WeaponModsExpander` rewrites each of `weaponModsInclusive` and `weaponModsExclusive`. Each field is processed independently — overrides scoped to one field cannot leak into the other.

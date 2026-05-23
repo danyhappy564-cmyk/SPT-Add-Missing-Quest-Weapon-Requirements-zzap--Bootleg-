@@ -385,6 +385,22 @@ public class MergeHelperTests
         result.Should().BeEmpty();
     }
 
+    [Fact]
+    public void MergeTypeRules_preserves_ApplyToManualOverrides_flag_through_merge_and_replace()
+    {
+        var existing = new List<TypeRule> { Rule("AKM") };
+        var incoming = new List<TypeRule>
+        {
+            new() { Type = "HK_Family", ApplyToManualOverrides = true }
+        };
+
+        var merged = MergeHelper.MergeTypeRules(existing, incoming, OverrideBehaviour.MERGE);
+        merged.Single(r => r.Type == "HK_Family").ApplyToManualOverrides.Should().BeTrue();
+
+        var replaced = MergeHelper.MergeTypeRules(existing, incoming, OverrideBehaviour.REPLACE);
+        replaced.Single().ApplyToManualOverrides.Should().BeTrue();
+    }
+
     // Per-rule behaviour (all under file-level MERGE)
 
     [Fact]
