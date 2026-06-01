@@ -1,0 +1,47 @@
+{
+  "planPath": "docs/superpowers/plans/2026-05-23-applytomanual-override-flag.md",
+  "tasks": [
+    {
+      "id": 1,
+      "subject": "Task 1: Add ApplyToManualOverrides field to TypeRule",
+      "status": "completed",
+      "description": "**Goal:** Model exposes optional flag, default false, JSON-bound via `applyToManualOverrides`.\n\n**Files:**\n- Modify: AddMissingQuestRequirements/Models/TypeRule.cs\n- Create: AddMissingQuestRequirements.Tests/Models/TypeRuleTests.cs\n\n**Verify:** dotnet test --filter \"FullyQualifiedName~TypeRuleTests\"\n\n```json:metadata\n{\"files\":[\"AddMissingQuestRequirements/Models/TypeRule.cs\",\"AddMissingQuestRequirements.Tests/Models/TypeRuleTests.cs\"],\"verifyCommand\":\"dotnet test --filter \\\"FullyQualifiedName~TypeRuleTests\\\"\",\"acceptanceCriteria\":[\"TypeRule.ApplyToManualOverrides init bool default false\",\"missing key in JSON => false\",\"applyToManualOverrides:true deserializes to true\",\"applyToManualOverrides:false deserializes to false\"]}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 2: Thread flag through RuleEngine and RuleMatch",
+      "status": "completed",
+      "blockedBy": [1],
+      "description": "**Goal:** RuleMatch carries flag. CompiledRule stores it. EvaluateAll propagates it per match.\n\n**Files:**\n- Modify: AddMissingQuestRequirements/Pipeline/Rules/RuleEngine.cs\n- Modify: AddMissingQuestRequirements.Tests/Pipeline/Rules/RuleEngineTests.cs\n\n**Verify:** dotnet test --filter \"FullyQualifiedName~RuleEngineTests\"\n\n```json:metadata\n{\"files\":[\"AddMissingQuestRequirements/Pipeline/Rules/RuleEngine.cs\",\"AddMissingQuestRequirements.Tests/Pipeline/Rules/RuleEngineTests.cs\"],\"verifyCommand\":\"dotnet test --filter \\\"FullyQualifiedName~RuleEngineTests\\\"\",\"acceptanceCriteria\":[\"RuleMatch has 4th positional bool ApplyToManualOverrides\",\"flagged rule => RuleMatch.ApplyToManualOverrides=true\",\"unflagged rule => RuleMatch.ApplyToManualOverrides=false\"]}\n```"
+    },
+    {
+      "id": 3,
+      "subject": "Task 3: Honor flag in BuildTypeMaps suppression",
+      "status": "completed",
+      "blockedBy": [2],
+      "description": "**Goal:** Suppression check at CategorizationHelper.cs:163 lets match.ApplyToManualOverrides matches through alongside core matches.\n\n**Files:**\n- Modify: AddMissingQuestRequirements/Pipeline/Shared/CategorizationHelper.cs\n\n**Verify:** dotnet test --filter \"FullyQualifiedName!~Integration\"\n\n```json:metadata\n{\"files\":[\"AddMissingQuestRequirements/Pipeline/Shared/CategorizationHelper.cs\"],\"verifyCommand\":\"dotnet test --filter \\\"FullyQualifiedName!~Integration\\\"\",\"acceptanceCriteria\":[\"flagged non-core rule contributes types to overridden items\",\"unflagged non-core rules still suppressed for overridden items\",\"core rules still always merge\",\"all existing tests still pass\"]}\n```"
+    },
+    {
+      "id": 4,
+      "subject": "Task 4: WeaponCategorizer HK scenario + regression tests",
+      "status": "completed",
+      "blockedBy": [3],
+      "description": "**Goal:** Two tests: HK-style fix scenario (flagged rule fires on overridden item) + regression pin (default-false still suppresses).\n\n**Files:**\n- Modify: AddMissingQuestRequirements.Tests/Pipeline/Weapon/WeaponCategorizerTests.cs\n\n**Verify:** dotnet test --filter \"FullyQualifiedName~WeaponCategorizer\"\n\n```json:metadata\n{\"files\":[\"AddMissingQuestRequirements.Tests/Pipeline/Weapon/WeaponCategorizerTests.cs\"],\"verifyCommand\":\"dotnet test --filter \\\"FullyQualifiedName~WeaponCategorizer\\\"\",\"acceptanceCriteria\":[\"Manual_Override_does_not_suppress_flagged_non_core_rule passes\",\"Manual_Override_still_suppresses_unflagged_non_core_rule passes\"]}\n```"
+    },
+    {
+      "id": 5,
+      "subject": "Task 5: AttachmentCategorizer parity test",
+      "status": "completed",
+      "blockedBy": [3],
+      "description": "**Goal:** Pin that the flag traverses shared CategorizerCore identically for attachments.\n\n**Files:**\n- Modify: AddMissingQuestRequirements.Tests/Pipeline/Attachment/AttachmentCategorizerTests.cs\n\n**Verify:** dotnet test --filter \"FullyQualifiedName~AttachmentCategorizer\"\n\nNote: implementer must read the existing fixture in that file to substitute concrete attachment ID + name regex into the template.\n\n```json:metadata\n{\"files\":[\"AddMissingQuestRequirements.Tests/Pipeline/Attachment/AttachmentCategorizerTests.cs\"],\"verifyCommand\":\"dotnet test --filter \\\"FullyQualifiedName~AttachmentCategorizer\\\"\",\"acceptanceCriteria\":[\"flag applies same way to attachments\"]}\n```"
+    },
+    {
+      "id": 6,
+      "subject": "Task 6: Docs, CHANGELOG, version bump",
+      "status": "completed",
+      "blockedBy": [4, 5],
+      "description": "**Goal:** Document flag in CLAUDE.md, add CHANGELOG entry, bump ModMetadata.Version 2.1.0 -> 2.2.0.\n\n**Files:**\n- Modify: CLAUDE.md\n- Modify: CHANGELOG.md\n- Modify: AddMissingQuestRequirements/Spt/ModMetadata.cs\n\n**Verify:** dotnet build -c Release && dotnet test --filter \"FullyQualifiedName!~Integration\"\n\n```json:metadata\n{\"files\":[\"CLAUDE.md\",\"CHANGELOG.md\",\"AddMissingQuestRequirements/Spt/ModMetadata.cs\"],\"verifyCommand\":\"dotnet build -c Release\",\"acceptanceCriteria\":[\"Version 2.2.0\",\"CHANGELOG 2.2.0 entry\",\"CLAUDE.md mentions applyToManualOverrides flag\"]}\n```"
+    }
+  ],
+  "lastUpdated": "2026-05-23T00:06:00Z"
+}
