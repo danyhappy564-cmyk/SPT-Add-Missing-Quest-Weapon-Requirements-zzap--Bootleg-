@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AddMissingQuestRequirements.Models;
 using AddMissingQuestRequirements.Pipeline.Database;
 using AddMissingQuestRequirements.Pipeline.Weapon;
 using FluentAssertions;
@@ -30,12 +31,28 @@ public class DefaultWeaponRuleFactoryTests
         return InMemoryItemDatabase.FromItemsOnly(items);
     }
 
+    // root → weapon → SniperRifle → boltgun (BoltAction=true)
+    //               → Shotgun     → boltshotty (BoltAction=true)  — must NOT become a sniper
+    private static InMemoryItemDatabase MakeDb() => new(
+    [
+        new ItemNode { Id = "root",    Name = "Item",        ParentId = null,     NodeType = "Node" },
+        new ItemNode { Id = "weapon",  Name = "Weapon",      ParentId = "root",   NodeType = "Node" },
+        new ItemNode { Id = "snode",   Name = "SniperRifle", ParentId = "weapon", NodeType = "Node" },
+        new ItemNode { Id = "boltgun", Name = "boltgun",     ParentId = "snode",  NodeType = "Item",
+            Props = new() { ["BoltAction"] = JsonDocument.Parse("true").RootElement } },
+        new ItemNode { Id = "shnode",  Name = "Shotgun",     ParentId = "weapon", NodeType = "Node" },
+        new ItemNode { Id = "boltshotty", Name = "boltshotty", ParentId = "shnode", NodeType = "Item",
+            Props = new() { ["BoltAction"] = JsonDocument.Parse("true").RootElement } },
+    ],
+    localeNames: new() { ["boltgun"] = "Modded bolt-action rifle", ["boltshotty"] = "TOZ-106-like bolt-action shotgun" });
+
     [Fact]
     public void WeaponAncestor_WithSubtree_EmitsDirectChildOfTemplate()
     {
         var db = BuildDb();
         var rules = DefaultWeaponRuleFactory.Build(db, ["Weapon"]);
-        rules.Should().ContainSingle();
+        // 1 ancestor rule + 1 BoltAction rule appended by DefaultWeaponRules
+        rules.Should().HaveCount(2);
         rules[0].Type.Should().Be("{directChildOf:Weapon}");
         rules[0].Conditions["hasAncestor"].GetString().Should().Be("Weapon");
     }
@@ -45,7 +62,8 @@ public class DefaultWeaponRuleFactoryTests
     {
         var db = BuildDb();
         var rules = DefaultWeaponRuleFactory.Build(db, ["Knife"]);
-        rules.Should().ContainSingle();
+        // 1 ancestor rule + 1 BoltAction rule appended by DefaultWeaponRules
+        rules.Should().HaveCount(2);
         rules[0].Type.Should().Be("Knife");
         rules[0].Conditions["hasAncestor"].GetString().Should().Be("Knife");
     }
@@ -55,7 +73,8 @@ public class DefaultWeaponRuleFactoryTests
     {
         var db = BuildDb();
         var rules = DefaultWeaponRuleFactory.Build(db, ["Lonely"]);
-        rules.Should().ContainSingle();
+        // 1 ancestor rule + 1 BoltAction rule appended by DefaultWeaponRules
+        rules.Should().HaveCount(2);
         rules[0].Type.Should().Be("Lonely");
     }
 
@@ -64,16 +83,57 @@ public class DefaultWeaponRuleFactoryTests
     {
         var db = BuildDb();
         var rules = DefaultWeaponRuleFactory.Build(db, ["Knife", "Weapon", "Lonely"]);
-        rules.Should().HaveCount(3);
+        // 3 ancestor rules + 1 BoltAction rule appended by DefaultWeaponRules
+        rules.Should().HaveCount(4);
         rules[0].Type.Should().Be("Knife");
         rules[1].Type.Should().Be("{directChildOf:Weapon}");
         rules[2].Type.Should().Be("Lonely");
     }
 
     [Fact]
-    public void EmptyAncestors_ReturnsEmpty()
+    public void EmptyAncestors_StillSurfacesPropertyDefaults()
     {
         var db = BuildDb();
-        DefaultWeaponRuleFactory.Build(db, []).Should().BeEmpty();
+        // Property/structural defaults are independent of WeaponLikeAncestors.
+        var rules = DefaultWeaponRuleFactory.Build(db, []);
+        rules.Should().HaveCount(1);
+        rules[0].Type.Should().Be("BoltActionSniperRifle");
+    }
+
+    [Fact]
+    public void DefaultWeaponRules_contains_boltaction_rule()
+    {
+        DefaultWeaponRules.Rules.Should().ContainSingle();
+        DefaultWeaponRules.Rules[0].Type.Should().Be("BoltActionSniperRifle");
+        DefaultWeaponRules.Rules[0].Conditions.Should().ContainKey("properties");
+    }
+
+    [Fact]
+    public void Build_output_includes_boltaction_rule()
+    {
+        var rules = DefaultWeaponRuleFactory.Build(MakeDb(), ["Weapon"]);
+        rules.Should().Contain(r => r.Type == "BoltActionSniperRifle");
+    }
+
+    [Fact]
+    public void BoltAction_item_is_tagged_without_any_override()
+    {
+        var rules = DefaultWeaponRuleFactory.Build(MakeDb(), ["Weapon"]);
+        var result = new WeaponCategorizer(rules)
+            .Categorize(MakeDb(), new OverriddenSettings(), new ModConfig());
+
+        result.WeaponToType["boltgun"].Should().Contain("BoltActionSniperRifle");
+    }
+
+    [Fact]
+    public void BoltAction_shotgun_is_not_tagged_BoltActionSniperRifle()
+    {
+        // The BoltAction prop is not exclusive to snipers (TOZ-106 is a bolt-action
+        // shotgun). The hasAncestor:SniperRifle guard must exclude it.
+        var rules = DefaultWeaponRuleFactory.Build(MakeDb(), ["Weapon"]);
+        var result = new WeaponCategorizer(rules)
+            .Categorize(MakeDb(), new OverriddenSettings(), new ModConfig());
+
+        result.WeaponToType["boltshotty"].Should().NotContain("BoltActionSniperRifle");
     }
 }

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.0
+
+**Fixes**
+- Override item IDs are now matched case-insensitively against the item database and folded to the DB's canonical casing. Miscased IDs (e.g. uppercase Massivesoft template IDs) in `manualTypeOverrides`, `canBeUsedAs`, and quest `includedWeapons` / `excludedWeapons` / `includedMods` / `excludedMods` previously no-opped silently; they now work and are written back into quests with the correct casing.
+
+**Added**
+- Code-level default rule tags every bolt-action rifle under the `SniperRifle` node (`_props.BoltAction == true`) as `BoltActionSniperRifle`, removing the need for per-weapon manual overrides. Guarded by `hasAncestor: SniperRifle` so the bolt-action TOZ-106 shotgun is not mistagged. Both the SPT loader and the Inspector inherit the rule via `DefaultWeaponRuleFactory`.
+
 ## 2.2.0
 
 **Added**

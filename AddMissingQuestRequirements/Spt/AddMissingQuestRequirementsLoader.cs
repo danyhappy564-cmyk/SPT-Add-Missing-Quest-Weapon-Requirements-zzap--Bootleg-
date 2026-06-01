@@ -111,6 +111,10 @@ public sealed class AddMissingQuestRequirementsLoader : IOnLoad
                 AttachmentTypeRules = readSettings.AttachmentTypeRules,
             };
 
+            // Fold any miscased override item IDs (e.g. uppercase Massivesoft IDs)
+            // to the DB's canonical casing — fixes both lookups and write-back.
+            OverrideIdCanonicalizer.Normalize(settings, itemDb);
+
             var questOverrideCount = settings.QuestOverrides.Values.Sum(list => list.Count);
             logger.Info(
                 $"Overrides loaded: {questOverrideCount} quest entries, "

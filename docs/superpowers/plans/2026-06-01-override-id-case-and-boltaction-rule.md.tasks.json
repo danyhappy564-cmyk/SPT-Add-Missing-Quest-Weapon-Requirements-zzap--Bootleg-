@@ -1,0 +1,46 @@
+{
+  "planPath": "docs/superpowers/plans/2026-06-01-override-id-case-and-boltaction-rule.md",
+  "tasks": [
+    {
+      "id": 1,
+      "subject": "Task 1: OverrideIdCanonicalizer",
+      "status": "completed",
+      "description": "**Goal:** New pure pass that rewrites every item-ID-bearing field in OverriddenSettings to the DB's canonical casing, in place.\n\n**Files:** Create AddMissingQuestRequirements/Pipeline/Override/OverrideIdCanonicalizer.cs; Test AddMissingQuestRequirements.Tests/Pipeline/Override/OverrideIdCanonicalizerTests.cs\n\n**Verify:** dotnet test --filter \"FullyQualifiedName~OverrideIdCanonicalizerTests\"\n\n```json:metadata\n{\"files\": [\"AddMissingQuestRequirements/Pipeline/Override/OverrideIdCanonicalizer.cs\", \"AddMissingQuestRequirements.Tests/Pipeline/Override/OverrideIdCanonicalizerTests.cs\"], \"verifyCommand\": \"dotnet test --filter \\\"FullyQualifiedName~OverrideIdCanonicalizerTests\\\"\", \"acceptanceCriteria\": [\"manual override key canonicalized, value preserved\", \"canBeUsedAs keys and members canonicalized\", \"quest included/excluded lists and bundles canonicalized, type names untouched\", \"unknown id passes through\", \"key collision does not throw\"]}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 2: DefaultWeaponRules + factory append",
+      "status": "completed",
+      "description": "**Goal:** Add the code-level BoltAction:true -> BoltActionSniperRifle rule and append it to every weapon rule set via the factory.\n\n**Files:** Create AddMissingQuestRequirements/Pipeline/Weapon/DefaultWeaponRules.cs; Modify AddMissingQuestRequirements/Pipeline/Weapon/DefaultWeaponRuleFactory.cs; Test AddMissingQuestRequirements.Tests/Pipeline/Weapon/DefaultWeaponRuleFactoryTests.cs\n\n**Verify:** dotnet test --filter \"FullyQualifiedName~DefaultWeaponRuleFactoryTests\"\n\n```json:metadata\n{\"files\": [\"AddMissingQuestRequirements/Pipeline/Weapon/DefaultWeaponRules.cs\", \"AddMissingQuestRequirements/Pipeline/Weapon/DefaultWeaponRuleFactory.cs\", \"AddMissingQuestRequirements.Tests/Pipeline/Weapon/DefaultWeaponRuleFactoryTests.cs\"], \"verifyCommand\": \"dotnet test --filter \\\"FullyQualifiedName~DefaultWeaponRuleFactoryTests\\\"\", \"acceptanceCriteria\": [\"DefaultWeaponRules.Rules has single BoltActionSniperRifle properties rule\", \"Build output includes BoltAction rule\", \"BoltAction item tagged BoltActionSniperRifle with no override\"]}\n```"
+    },
+    {
+      "id": 3,
+      "subject": "Task 3: Inspector consolidation onto the factory",
+      "status": "completed",
+      "blockedBy": [2],
+      "description": "**Goal:** Replace the Inspector's stale local rule-builder with DefaultWeaponRuleFactory.Build.\n\n**Files:** Modify AddMissingQuestRequirements.Inspector/PipelineRunner.cs; Test AddMissingQuestRequirements.Tests/Inspector/PipelineRunnerRulesTests.cs\n\n**Verify:** dotnet test --filter \"FullyQualifiedName~PipelineRunnerRulesTests\" && dotnet build -c Release\n\n```json:metadata\n{\"files\": [\"AddMissingQuestRequirements.Inspector/PipelineRunner.cs\", \"AddMissingQuestRequirements.Tests/Inspector/PipelineRunnerRulesTests.cs\"], \"verifyCommand\": \"dotnet test --filter \\\"FullyQualifiedName~PipelineRunnerRulesTests\\\" && dotnet build -c Release\", \"acceptanceCriteria\": [\"local BuildDefaultWeaponRules removed\", \"Run uses DefaultWeaponRuleFactory.Build\", \"parity test green\"]}\n```"
+    },
+    {
+      "id": 4,
+      "subject": "Task 4: Wire canonicalization into both entry points",
+      "status": "completed",
+      "blockedBy": [1, 3],
+      "description": "**Goal:** Call OverrideIdCanonicalizer.Normalize after override merge in both the SPT loader and the Inspector, before categorization.\n\n**Files:** Modify AddMissingQuestRequirements/Spt/AddMissingQuestRequirementsLoader.cs; Modify AddMissingQuestRequirements.Inspector/PipelineRunner.cs\n\n**Verify:** dotnet build -c Release && dotnet test --filter \"FullyQualifiedName!~Integration\"\n\n```json:metadata\n{\"files\": [\"AddMissingQuestRequirements/Spt/AddMissingQuestRequirementsLoader.cs\", \"AddMissingQuestRequirements.Inspector/PipelineRunner.cs\"], \"verifyCommand\": \"dotnet build -c Release && dotnet test --filter \\\"FullyQualifiedName!~Integration\\\"\", \"acceptanceCriteria\": [\"loader normalizes before ValidateOverrideIds\", \"PipelineRunner normalizes before categorization\", \"unit suite green\"]}\n```"
+    },
+    {
+      "id": 5,
+      "subject": "Task 5: Version bump + integration smoke",
+      "status": "completed",
+      "blockedBy": [4],
+      "description": "**Goal:** Bump the mod version to 2.3.0 and add an integration assertion that a real-DB bolt-action gains BoltActionSniperRifle with no override.\n\n**Files:** Modify AddMissingQuestRequirements/Spt/ModMetadata.cs; Modify AddMissingQuestRequirements.Tests/Integration/RealDataSmokeTests.cs; Modify CHANGELOG.md\n\n**Verify:** dotnet test --filter \"Category=Integration\" && dotnet build -c Release\n\n```json:metadata\n{\"files\": [\"AddMissingQuestRequirements/Spt/ModMetadata.cs\", \"AddMissingQuestRequirements.Tests/Integration/RealDataSmokeTests.cs\", \"CHANGELOG.md\"], \"verifyCommand\": \"dotnet test --filter \\\"Category=Integration\\\" && dotnet build -c Release\", \"acceptanceCriteria\": [\"version is 2.3.0\", \"integration fact asserts KATT AMR tagged BoltActionSniperRifle, no-ops when slice absent\", \"CHANGELOG 2.3.0 entry present\"]}\n```"
+    },
+    {
+      "id": 6,
+      "subject": "Task 6: Rebuild, redeploy, before/after report diff",
+      "status": "completed",
+      "blockedBy": [5],
+      "description": "**Goal:** Deploy the built mod, regenerate the debug report with debug:true, and confirm against the saved baseline that KATT + M200 gained BoltActionSniperRifle and nothing regressed.\n\n**USER-ORDERED GATE — NON-SKIPPABLE.** Requested by the user (before/after comparison to catch mistakes). Close only after every acceptanceCriteria item is re-validated independently with output captured from BOTH baseline and post-fix reports.\n\n**Files:** none (verification). Baseline: K:/SPT4/SPT/user/mods/AddMissingQuestRequirements/_baseline-2026-06-01-pre-fix/\n\n**Verify:** node diff-script (plan Task 6 Step 3) against baseline vs current AddMissingQuestRequirements-debug-report.json\n\n```json:metadata\n{\"files\": [], \"userGate\": true, \"tags\": [\"user-gate\"], \"requireEvidenceTokens\": [[\"baseline\", \"pre-fix\", \"members 3\"], [\"post-fix\", \"now\", \"after\"]], \"verifyCommand\": \"node diff-script (plan Task 6 Step 3) against _baseline-2026-06-01-pre-fix and current AddMissingQuestRequirements-debug-report.json\", \"acceptanceCriteria\": [\"KATT 020020ab50ab500000000000 type set contains BoltActionSniperRifle in post-fix report\", \"M200 68fd4feab87d77a5aaf6bf64 type set contains BoltActionSniperRifle in post-fix report\", \"BoltActionSniperRifle member count rises from 3 toward ~22\", \"no weapon present in baseline loses a type\"]}\n```"
+    }
+  ],
+  "lastUpdated": "2026-06-01T00:00:00Z"
+}

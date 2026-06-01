@@ -1,7 +1,7 @@
-using System.Text.Json;
 using AddMissingQuestRequirements.Models;
 using AddMissingQuestRequirements.Pipeline.Attachment;
 using AddMissingQuestRequirements.Pipeline.Database;
+using AddMissingQuestRequirements.Pipeline.Override;
 using AddMissingQuestRequirements.Pipeline.Quest;
 using AddMissingQuestRequirements.Pipeline.Shared;
 using AddMissingQuestRequirements.Pipeline.Weapon;
@@ -12,24 +12,6 @@ namespace AddMissingQuestRequirements.Inspector;
 
 public static class PipelineRunner
 {
-    // Catch-all rules: one per configured weapon-like ancestor. For "Weapon" we assign each
-    // item to the node directly under Weapon (giving Pistol / AssaultRifle / Shotgun / etc.)
-    // because the SPT weapon tree has an intermediate category layer. For other ancestors
-    // (Knife, ThrowWeap, …) the tree is flat — the item sits directly under the ancestor
-    // node — so {directChildOf:X} would resolve to the item's own _name and produce a unique
-    // type per item. Those ancestors instead get the ancestor name as a literal shared type.
-    private static TypeRule[] BuildDefaultWeaponRules(IReadOnlyList<string> weaponLikeAncestors)
-    {
-        return [..weaponLikeAncestors.Select(ancestor => new TypeRule
-        {
-            Conditions = new Dictionary<string, JsonElement>
-            {
-                ["hasAncestor"] = JsonSerializer.SerializeToElement(ancestor),
-            },
-            Type = ancestor == "Weapon" ? "{directChildOf:Weapon}" : ancestor,
-        })];
-    }
-
     // Attachment categorization rules live in the core project — see
     // AddMissingQuestRequirements.Pipeline.Attachment.DefaultAttachmentRules.
 
@@ -39,8 +21,13 @@ public static class PipelineRunner
         var config = loaded.Config;
         var itemDb = loaded.ItemDb;
 
+        // Fold any miscased override item IDs to the DB's canonical casing before
+        // categorization (parity with the SPT loader).
+        OverrideIdCanonicalizer.Normalize(settings, itemDb);
+
         // ── Categorize weapons ────────────────────────────────────────────────
-        var weaponCategorizer = new WeaponCategorizer(BuildDefaultWeaponRules(config.WeaponLikeAncestors));
+        var weaponCategorizer = new WeaponCategorizer(
+            DefaultWeaponRuleFactory.Build(itemDb, config.WeaponLikeAncestors));
         var categorization = weaponCategorizer.Categorize(itemDb, settings, config);
 
         // ── Categorize attachments ────────────────────────────────────────────

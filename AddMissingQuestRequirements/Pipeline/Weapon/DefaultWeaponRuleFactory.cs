@@ -20,7 +20,9 @@ public static class DefaultWeaponRuleFactory
     {
         if (ancestors.Count == 0)
         {
-            return [];
+            // No ancestor rules to build, but the property/structural defaults are
+            // independent of WeaponLikeAncestors — still surface them.
+            return [..DefaultWeaponRules.Rules];
         }
 
         var hasSubtree = DetectSubtreeAncestors(db, ancestors);
@@ -41,6 +43,9 @@ public static class DefaultWeaponRuleFactory
                 Type = type,
             });
         }
+
+        // Property/structural defaults independent of ancestors (e.g. BoltAction).
+        rules.AddRange(DefaultWeaponRules.Rules);
 
         return rules;
     }

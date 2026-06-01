@@ -500,6 +500,25 @@ public class RealDataSmokeTests
             "GP-34, M203, and GP-25 Kostyor underbarrel grenade launchers live under Mod → GearMod → Launcher and must categorize via the Launcher ancestor");
     }
 
+    // ── Test: Real bolt-action gains BoltActionSniperRifle with no override ───
+
+    [Fact]
+    public void RealBoltAction_IsTaggedBoltActionSniperRifle_WithoutOverride()
+    {
+        if (!TryGetDb(out var db)) return;
+        // KATT AMR (Massivesoft). Skip if this mod is not in the loaded slice.
+        const string kattId = "020020ab50ab500000000000";
+        if (!db.Items.ContainsKey(kattId)) return;
+
+        var config = new ModConfig();
+        var result = new WeaponCategorizer(DefaultWeaponRulesFor(config, db))
+            .Categorize(db, new OverriddenSettings(), config);
+
+        result.WeaponToType.Should().ContainKey(kattId);
+        result.WeaponToType[kattId].Should().Contain("BoltActionSniperRifle",
+            "the BoltAction property rule must tag modded bolt-actions with no manual override");
+    }
+
     // ── Test 11: Slaughterhouse produces no uncategorized debug spam ──────────
 
     [Fact]
