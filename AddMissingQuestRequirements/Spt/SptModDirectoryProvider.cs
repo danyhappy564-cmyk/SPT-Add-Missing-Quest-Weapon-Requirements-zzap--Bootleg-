@@ -1,10 +1,6 @@
-// SPT's ModHelper.GetAbsolutePathToModFolder is virtual (confirmed via reflection on
-// SPTarkov.Server.Core 4.0.13), so tests can subclass ModHelper and override the method
-// directly. No delegate-based fallback constructor is required.
-
 using System.Reflection;
 using AddMissingQuestRequirements.Pipeline.Override;
-using SPTarkov.Server.Core.Helpers;
+using SPTarkov.Server.Core.Helpers.Server;
 
 namespace AddMissingQuestRequirements.Spt;
 
@@ -14,20 +10,31 @@ namespace AddMissingQuestRequirements.Spt;
 /// skips directories without a <c>MissingQuestWeapons/</c> child, so this provider
 /// applies no filtering of its own.
 /// </summary>
+/// <remarks>
+/// On SPT 4.0 <c>ModHelper.GetAbsolutePathToModFolder</c> was virtual, so tests could
+/// subclass <see cref="ModHelper"/> and override it. 4.1 made it non-virtual, hence the
+/// delegate constructor: the resolution step is the only thing that needs faking, and a
+/// <see cref="Func{T, TResult}"/> is a smaller seam than an interface nobody else wants.
+/// </remarks>
 public sealed class SptModDirectoryProvider : IModDirectoryProvider
 {
-    private readonly ModHelper _modHelper;
+    private readonly Func<Assembly, string> _resolveModFolder;
     private readonly Assembly _ownAssembly;
 
     public SptModDirectoryProvider(ModHelper modHelper, Assembly ownAssembly)
+        : this(modHelper.GetAbsolutePathToModFolder, ownAssembly)
     {
-        _modHelper = modHelper;
+    }
+
+    public SptModDirectoryProvider(Func<Assembly, string> resolveModFolder, Assembly ownAssembly)
+    {
+        _resolveModFolder = resolveModFolder;
         _ownAssembly = ownAssembly;
     }
 
     public IEnumerable<string> GetModDirectories()
     {
-        var ownPath = _modHelper.GetAbsolutePathToModFolder(_ownAssembly);
+        var ownPath = _resolveModFolder(_ownAssembly);
         var parent = Path.GetDirectoryName(ownPath);
         if (parent is null)
         {

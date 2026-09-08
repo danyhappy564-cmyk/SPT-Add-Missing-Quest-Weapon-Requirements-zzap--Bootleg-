@@ -1,6 +1,5 @@
 using System.Reflection;
 using AddMissingQuestRequirements.Spt;
-using AddMissingQuestRequirements.Tests.Spt.Fakes;
 using FluentAssertions;
 
 namespace AddMissingQuestRequirements.Tests.Spt;
@@ -20,8 +19,7 @@ public class SptModDirectoryProviderTests
 
         try
         {
-            var fakeHelper = new FakeModHelper(ownDir);
-            var provider = new SptModDirectoryProvider(fakeHelper, Assembly.GetExecutingAssembly());
+            var provider = new SptModDirectoryProvider(_ => ownDir, Assembly.GetExecutingAssembly());
 
             var result = provider.GetModDirectories().ToList();
 
@@ -42,8 +40,7 @@ public class SptModDirectoryProviderTests
 
         try
         {
-            var fakeHelper = new FakeModHelper(ownDir);
-            var provider = new SptModDirectoryProvider(fakeHelper, Assembly.GetExecutingAssembly());
+            var provider = new SptModDirectoryProvider(_ => ownDir, Assembly.GetExecutingAssembly());
 
             var result = provider.GetModDirectories().ToList();
 

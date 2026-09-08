@@ -1,14 +1,42 @@
 # AddMissingQuestRequirements
 
-> Server-side SPT 4.x mod that auto-expands quest weapon requirements to include modded clones.
+> Server-side SPT 4.1 mod that auto-expands quest weapon requirements to include modded clones.
 
-![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet) ![SPT 4.x](https://img.shields.io/badge/SPT-4.x-8B0000) ![License: MIT](https://img.shields.io/badge/license-MIT-green)
+![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet) ![SPT 4.1.5](https://img.shields.io/badge/SPT-4.1.5-8B0000) ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
 A server-side SPT mod that automatically includes **modded weapons and attachments** in base-game quest conditions.
 
 Every vanilla quest that says *"kill 10 PMCs with an AK-74"* implicitly means "any modded AK-74 clone too" — but the game only counts the specific weapon IDs BSG listed. This mod fixes that at server startup: it figures out what category each weapon and attachment belongs to, then expands quest conditions to include every same-category item installed on your server.
 
 **No in-raid cost.** Everything happens once, when the server boots. Nothing is patched on the fly.
+
+---
+
+## SPT 4.1 포팅에 대해
+
+원작 **guiltyman** 의 4.0.13 용 모드를 **SPT 4.1.5** 로 포팅한 저장소입니다. 동작은 그대로입니다.
+
+이 모드는 SPT 의존성이 `AddMissingQuestRequirements/Spt/` 폴더에만 격리돼 있어서, 나머지 7,000줄
+파이프라인은 한 줄도 안 건드렸습니다. 바뀐 것:
+
+| | 4.0.13 | 4.1.5 |
+| --- | --- | --- |
+| 타깃 | `net9.0` | `net10.0` |
+| 패키지 | `SPTarkov.*` | `SPTushonka.*` |
+| 메타데이터 | `AbstractModMetadata` 상속 | `IModMetadata` 구현 (+`HasPrepatcher`, −`IsBundleMod`) |
+| 진입점 | `IOnLoad.OnLoad()` | `IOnLoad.OnLoadAsync(CancellationToken)` |
+| DB 접근 | `DatabaseServer.GetTables().Templates` | `TemplateTable` 직접 주입 |
+| 로케일 | `Core.Services` | `Services.Locales` |
+| `ModHelper` | `Core.Helpers` | `Helpers.Server` |
+| `ISptLogger` | `Core.Models.Utils` | `SPTarkov.Common.Models.Logging` |
+| 로거 색상 | SPT 자체 `LogTextColor` / `LogBackgroundColor` / `LogLevel` | `Spectre.Console.Color` / `Microsoft.Extensions.Logging.LogLevel` |
+
+**테스트에 영향이 있던 것 하나** — 4.0에서 `ModHelper.GetAbsolutePathToModFolder` 는 virtual 이라
+테스트가 `ModHelper` 를 상속해 가짜를 만들 수 있었습니다. 4.1에서 virtual 이 아니게 바뀌면서 그
+방식이 막혔습니다. `SptModDirectoryProvider` 에 `Func<Assembly, string>` 생성자를 하나 추가해서
+해결했습니다 (기존 `ModHelper` 생성자는 그대로 두고 위임). 인터페이스를 새로 만드는 것보다 작은 이음매입니다.
+
+**검증**: 원작의 테스트 스위트 **564개 전부 통과**합니다. 인게임 테스트는 아직 안 했습니다.
 
 ---
 
@@ -45,7 +73,7 @@ Requirements: .NET 9 SDK. Clone, then:
 dotnet build -c Release
 ```
 
-The mod DLL lands in `AddMissingQuestRequirements/bin/Release/net9.0/`. Copy the built folder into `SPT/user/mods/AddMissingQuestRequirements/` alongside `config/` and `MissingQuestWeapons/`.
+The mod DLL lands in `AddMissingQuestRequirements/bin/Release/AddMissingQuestRequirements/`. Copy the built folder into `SPT/user/mods/AddMissingQuestRequirements/` alongside `config/` and `MissingQuestWeapons/`.
 
 For auto-deploy on each build, copy `local.props.template` → `local.props` and point `SptRoot` at your SPT install; the Release build then drops the DLL + config tree into `user/mods/` automatically.
 

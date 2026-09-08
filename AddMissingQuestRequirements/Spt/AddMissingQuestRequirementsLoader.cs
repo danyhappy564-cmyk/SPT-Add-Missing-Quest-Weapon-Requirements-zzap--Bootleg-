@@ -15,10 +15,10 @@ using AddMissingQuestRequirements.Reporting;
 using AddMissingQuestRequirements.Util;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
-using SPTarkov.Server.Core.Helpers;
-using SPTarkov.Server.Core.Models.Utils;
-using SPTarkov.Server.Core.Servers;
-using SPTarkov.Server.Core.Services;
+using SPTarkov.Server.Core.Helpers.Server;
+using SPTarkov.Common.Models.Logging;
+using SPTarkov.Server.Core.Models.Spt.Tables;
+using SPTarkov.Server.Core.Services.Locales;
 
 namespace AddMissingQuestRequirements.Spt;
 
@@ -42,7 +42,7 @@ public sealed class AddMissingQuestRequirementsLoader : IOnLoad
         Migrations.v3_to_v4_Config,
     ];
 
-    private readonly DatabaseServer _databaseServer;
+    private readonly TemplateTable _templateTable;
     private readonly LocaleService _localeService;
     private readonly ModHelper _modHelper;
     private readonly ISptLogger<AddMissingQuestRequirementsLoader> _sptLogger;
@@ -50,14 +50,14 @@ public sealed class AddMissingQuestRequirementsLoader : IOnLoad
     private readonly ISptLogger<SptQuestDatabase> _questDbLogger;
 
     public AddMissingQuestRequirementsLoader(
-        DatabaseServer databaseServer,
+        TemplateTable templateTable,
         LocaleService localeService,
         ModHelper modHelper,
         ISptLogger<AddMissingQuestRequirementsLoader> sptLogger,
         ISptLogger<SptItemDatabase> itemDbLogger,
         ISptLogger<SptQuestDatabase> questDbLogger)
     {
-        _databaseServer = databaseServer;
+        _templateTable = templateTable;
         _localeService = localeService;
         _modHelper = modHelper;
         _sptLogger = sptLogger;
@@ -65,7 +65,7 @@ public sealed class AddMissingQuestRequirementsLoader : IOnLoad
         _questDbLogger = questDbLogger;
     }
 
-    public Task OnLoad()
+    public Task OnLoadAsync(CancellationToken cancellationToken = default)
     {
         var sw = Stopwatch.StartNew();
         try
@@ -87,8 +87,8 @@ public sealed class AddMissingQuestRequirementsLoader : IOnLoad
                 return Task.CompletedTask;
             }
 
-            var itemDb = new SptItemDatabase(_databaseServer, _localeService, _itemDbLogger);
-            var questDb = new SptQuestDatabase(_databaseServer, _questDbLogger);
+            var itemDb = new SptItemDatabase(_templateTable, _localeService, _itemDbLogger);
+            var questDb = new SptQuestDatabase(_templateTable, _questDbLogger);
             var modDirs = new SptModDirectoryProvider(_modHelper, ownAssembly);
             var nameResolver = new ItemDbNameResolver(itemDb);
 
