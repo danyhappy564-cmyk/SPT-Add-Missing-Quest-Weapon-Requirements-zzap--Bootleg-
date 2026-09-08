@@ -14,7 +14,7 @@
     <SptRoot Condition="'$(SptRoot)' == ''">E:\SPT 4.1</SptRoot>
 
     <!-- SPT server lives under $(SptRoot)/SPT/ in the default layout. -->
-    <SptServerRoot Condition="'$(SptServerRoot)' == '' and '$(SptRoot)' != ''">$(SptRoot)\SPT</SptServerRoot>
+    <SptServerRoot Condition="'$(SptServerRoot)' == '' and '$(SptRoot)' != ''">$(SptRoot)\SPT_Runtime</SptServerRoot>
     <SptModsDir Condition="'$(SptModsDir)' == '' and '$(SptServerRoot)' != ''">$(SptServerRoot)\user\mods</SptModsDir>
   </PropertyGroup>
 </Project>
