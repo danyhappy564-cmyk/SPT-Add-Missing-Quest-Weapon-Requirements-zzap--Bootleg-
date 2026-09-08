@@ -1,8 +1,18 @@
 <Project>
-  <!-- Machine-local overrides (SptRoot, SptModsDir). Not committed. -->
+  <!-- Machine-local overrides (SptRoot, SptModsDir). Not committed. Wins over the default below. -->
   <Import Project="local.props" Condition="Exists('$(MSBuildThisFileDirectory)local.props')" />
 
   <PropertyGroup>
+    <!--
+      Where SPT is installed. Resolution order:
+        1. -p:SptRoot=... on the command line
+        2. an SptRoot environment variable
+        3. local.props (imported above)
+        4. the default below
+      Set it to CHANGE_ME to opt out of auto-deploy entirely.
+    -->
+    <SptRoot Condition="'$(SptRoot)' == ''">E:\SPT 4.1</SptRoot>
+
     <!-- SPT server lives under $(SptRoot)/SPT/ in the default layout. -->
     <SptServerRoot Condition="'$(SptServerRoot)' == '' and '$(SptRoot)' != ''">$(SptRoot)\SPT</SptServerRoot>
     <SptModsDir Condition="'$(SptModsDir)' == '' and '$(SptServerRoot)' != ''">$(SptServerRoot)\user\mods</SptModsDir>
