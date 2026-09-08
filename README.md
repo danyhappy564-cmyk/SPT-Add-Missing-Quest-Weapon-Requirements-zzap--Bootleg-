@@ -87,6 +87,12 @@ or set it once by copying `local.props.template` → `local.props` (git-ignored)
 
 Binaries are refreshed every build; `config/config.jsonc` and the three `MissingQuestWeapons/*.jsonc` files are only written when they are not already there, so your edits survive rebuilds. To build without deploying, pass `-p:DeployToSpt=false`, or set `SptRoot` to `CHANGE_ME`.
 
+Only the mod itself deploys. `SptDbExporter/` is a developer tool — it dumps the item/quest/locale database to disk so the Inspector and the integration tests have an offline slice — and is opt-in:
+
+```bash
+dotnet build SptDbExporter/SptDbExporter.csproj -c Release -p:DeployExporter=true
+```
+
 Run the test suite:
 
 ```bash

@@ -21,8 +21,16 @@
     Requires local.props with <SptRoot> set (copy local.props.template → local.props).
     Generates exporter-config.json pointing OutputPath to SptDbExporter/export/ under this project.
   -->
+  <!--
+    Opt-in only. This is a developer tool: it dumps the whole item/quest/locale database
+    to disk so the Inspector and the integration tests have an offline slice to work
+    against. A player has no use for it, and left installed it warns on every server boot
+    about the missing exporter-config.json. Deploy it deliberately:
+
+      dotnet build SptDbExporter/SptDbExporter.csproj -c Release -p:DeployExporter=true
+  -->
   <Target Name="DeployToSptMods" AfterTargets="Build"
-          Condition="'$(SptModsDir)' != '' and '$(SptRoot)' != 'CHANGE_ME'">
+          Condition="'$(DeployExporter)' == 'true' and '$(SptModsDir)' != '' and '$(SptRoot)' != 'CHANGE_ME' and Exists('$(SptModsDir)')">
     <PropertyGroup>
       <_DeployDir>$(SptModsDir)\SptDbExporter</_DeployDir>
       <!-- Forward slashes avoid JSON backslash escaping -->
