@@ -75,7 +75,17 @@ dotnet build -c Release
 
 The mod DLL lands in `AddMissingQuestRequirements/bin/Release/AddMissingQuestRequirements/`. Copy the built folder into `SPT/user/mods/AddMissingQuestRequirements/` alongside `config/` and `MissingQuestWeapons/`.
 
-For auto-deploy on each build, copy `local.props.template` → `local.props` and point `SptRoot` at your SPT install; the Release build then drops the DLL + config tree into `user/mods/` automatically.
+**Auto-deploy is on by default.** `SptRoot` defaults to `E:\SPT 4.1`, so a Release build drops the DLL + config tree straight into `{SptRoot}\SPT\user\mods\AddMissingQuestRequirements\`.
+
+If your install is elsewhere, either pass it per build:
+
+```bash
+dotnet build -c Release -p:SptRoot="D:\your\SPT"
+```
+
+or set it once by copying `local.props.template` → `local.props` (git-ignored) and filling in `SptRoot`.
+
+Binaries are refreshed every build; `config/config.jsonc` and the three `MissingQuestWeapons/*.jsonc` files are only written when they are not already there, so your edits survive rebuilds. To build without deploying, pass `-p:DeployToSpt=false`, or set `SptRoot` to `CHANGE_ME`.
 
 Run the test suite:
 

@@ -22,7 +22,7 @@
     Generates exporter-config.json pointing OutputPath to SptDbExporter/export/ under this project.
   -->
   <Target Name="DeployToSptMods" AfterTargets="Build"
-          Condition="'$(SptModsDir)' != '' and '$(SptRoot)' != 'CHANGE_ME' and '$([MSBuild]::IsOSPlatform(`Windows`))' == 'true'">
+          Condition="'$(SptModsDir)' != '' and '$(SptRoot)' != 'CHANGE_ME'">
     <PropertyGroup>
       <_DeployDir>$(SptModsDir)\SptDbExporter</_DeployDir>
       <!-- Forward slashes avoid JSON backslash escaping -->

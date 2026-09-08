@@ -53,7 +53,7 @@
     (e.g. building in a Linux dev container without an SPT install).
   -->
   <Target Name="DeployToSptMods" AfterTargets="Build"
-          Condition="'$(SptModsDir)' != '' and '$(SptRoot)' != 'CHANGE_ME' and Exists('$(SptModsDir)') and '$([MSBuild]::IsOSPlatform(`Windows`))' == 'true'">
+          Condition="'$(SptModsDir)' != '' and '$(SptRoot)' != 'CHANGE_ME' and '$(DeployToSpt)' != 'false' and Exists('$(SptModsDir)')">
     <PropertyGroup>
       <_DeployDir>$(SptModsDir)\AddMissingQuestRequirements</_DeployDir>
       <_DeployConfigDir>$(_DeployDir)\config</_DeployConfigDir>
