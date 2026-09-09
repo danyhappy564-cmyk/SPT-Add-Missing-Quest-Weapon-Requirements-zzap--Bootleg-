@@ -23,13 +23,32 @@ using SPTarkov.Server.Core.Services.Locales;
 namespace AddMissingQuestRequirements.Spt;
 
 /// <summary>
-/// SPT <see cref="IOnLoad"/> entry point. Runs once at server startup after the
-/// database is loaded but before SPT processes it, executing the three-phase
-/// pipeline and writing the expanded condition arrays back into SPT's in-memory
-/// quest tables. Failures are logged and swallowed — the server must finish
+/// SPT <see cref="IOnLoad"/> entry point. Runs once at server startup, executing the
+/// three-phase pipeline and writing the expanded condition arrays back into SPT's
+/// in-memory quest tables. Failures are logged and swallowed — the server must finish
 /// startup regardless of this mod's success.
 /// </summary>
-[Injectable(TypePriority = OnLoadOrder.TraderRegistration + 9999)]
+/// <remarks>
+/// Deliberately the last thing to touch the quest table. This mod reads whatever quests
+/// and items are in the database and rewrites weapon condition arrays in place, so any
+/// mod that writes quests after it silently undoes its work — and one that replaces a
+/// whole <c>Quest</c> object rather than editing fields undoes it completely, because the
+/// expanded arrays live on the object being thrown away.
+/// <para>
+/// That is not hypothetical: SptQuestLive registers at <c>PostLoad + 1</c> and does
+/// <c>quests[questId] = quest</c> with a freshly deserialised object. At the previous
+/// <c>TraderRegistration + 9999</c> this mod ran roughly 690,000 priority units earlier
+/// and every quest that mod overrides lost its expansion, with nothing logged either side.
+/// </para>
+/// <para>
+/// Running late costs nothing. Quest conditions are served per request, so there is no
+/// deadline to beat, and unlike adding items — which SPT's <c>DatabaseIntegrityService</c>
+/// forces into <c>Preload</c> — editing existing quests has no cutoff. Later is also
+/// strictly better for the mod's own purpose: more modded weapons and more modded quests
+/// are in the database by then.
+/// </para>
+/// </remarks>
+[Injectable(TypePriority = OnLoadOrder.PostLoad + 50000)]
 public sealed class AddMissingQuestRequirementsLoader : IOnLoad
 {
     private const int CurrentConfigVersion = 4;
