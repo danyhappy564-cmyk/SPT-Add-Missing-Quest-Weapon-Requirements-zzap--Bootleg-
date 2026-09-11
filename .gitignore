@@ -76,3 +76,4 @@ amqr_patches/
 .DS_Store
 Thumbs.db
 desktop.ini
+release/
